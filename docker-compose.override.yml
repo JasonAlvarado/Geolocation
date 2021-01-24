@@ -1,0 +1,10 @@
+version: '3.4'
+services:
+  geolocator.service:
+
+  apigeo.service:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "80"
+

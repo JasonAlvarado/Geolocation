@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiGeo.Service", "ApiGeo.Service\ApiGeo.Service.csproj", "{1C6A852F-BE03-461A-A303-A8915462DAA0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geolocator.Service", "Geolocator.Service\Geolocator.Service.csproj", "{B7ACF38D-7127-4F37-8748-87E0872D196E}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{1D3AE5DD-C247-4157-8CBA-5ECF835652B5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1C6A852F-BE03-461A-A303-A8915462DAA0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C6A852F-BE03-461A-A303-A8915462DAA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C6A852F-BE03-461A-A303-A8915462DAA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C6A852F-BE03-461A-A303-A8915462DAA0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7ACF38D-7127-4F37-8748-87E0872D196E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7ACF38D-7127-4F37-8748-87E0872D196E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7ACF38D-7127-4F37-8748-87E0872D196E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7ACF38D-7127-4F37-8748-87E0872D196E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D3AE5DD-C247-4157-8CBA-5ECF835652B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D3AE5DD-C247-4157-8CBA-5ECF835652B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D3AE5DD-C247-4157-8CBA-5ECF835652B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D3AE5DD-C247-4157-8CBA-5ECF835652B5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B125A1BB-52CE-47CA-95F8-211A74F2C72E}
+	EndGlobalSection
+EndGlobal

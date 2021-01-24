@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Geolocator.Service": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

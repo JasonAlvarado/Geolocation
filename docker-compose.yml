@@ -1,0 +1,26 @@
+version: '3.4'
+
+services:
+  db:
+    image: "mcr.microsoft.com/mssql/server:2019-CU3-ubuntu-18.04"
+    environment:
+     SA_PASSWORD: "Asd123/*-"
+     ACCEPT_EULA: "Y"
+    container_name: sqlServer
+    ports:
+     - 2800:2800
+
+  geolocator.service:
+    image: ${DOCKER_REGISTRY-}geolocatorservice
+    build:
+      context: .
+      dockerfile: Geolocator.Service/Dockerfile
+    depends_on:
+     - db
+
+  apigeo.service:
+    image: ${DOCKER_REGISTRY-}apigeoservice
+    build:
+      context: .
+      dockerfile: ApiGeo.Service/Dockerfile
+
