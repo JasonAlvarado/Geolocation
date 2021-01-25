@@ -7,6 +7,7 @@ namespace Geolocator.Service.RemoteModel
 {
     public class GeoResultRemote
     {
+        public int Id { get; set; }
         public int GeoResultId { get; set; }
         public string Lat { get; set; }
 

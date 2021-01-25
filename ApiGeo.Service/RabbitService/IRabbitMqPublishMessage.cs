@@ -5,7 +5,8 @@ using System.Threading.Tasks;
 
 namespace ApiGeo.Service.RabbitService
 {
-    public interface ISendRequest
+    public interface IRabbitMqPublishMessage
     {
+        Task PublishMessage<T>(T messageEntity) where T : class;
     }
 }

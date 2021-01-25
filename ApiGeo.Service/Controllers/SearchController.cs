@@ -1,5 +1,7 @@
-﻿using ApiGeo.Service.Model;
+﻿using ApiGeo.Service.Base;
+using ApiGeo.Service.Model;
 using ApiGeo.Service.Persistence;
+using ApiGeo.Service.RabbitService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,15 +15,15 @@ using System.Threading.Tasks;
 
 namespace ApiGeo.Service.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class SearchController : ControllerBase
+    public class SearchController : ApiBaseController
     {
         private readonly DataContext context;
+        private readonly IRabbitMqPublishMessage rabbitMqPublishMessage;
 
-        public SearchController(DataContext context)
+        public SearchController(DataContext context, IRabbitMqPublishMessage rabbitMqPublishMessage)
         {
             this.context = context;
+            this.rabbitMqPublishMessage = rabbitMqPublishMessage;
         }
 
         [HttpPost("geolocalizar")]
@@ -33,7 +35,7 @@ namespace ApiGeo.Service.Controllers
             await context.GeoResults.AddAsync(new GeoResult() { GeoResultId = request.Id, State = "Procesando" });
             await context.SaveChangesAsync();
 
-            SendMessage(request);
+            await rabbitMqPublishMessage.PublishMessage(request);
             return Ok(request.Id);
         }
 
@@ -42,10 +44,10 @@ namespace ApiGeo.Service.Controllers
         {
             var geoRequest = await context.GeoResults.FirstOrDefaultAsync(x => x.GeoResultId == id);
 
-            if (geoRequest != null)
-                return Ok(geoRequest);
+            if (geoRequest == null)
+                return NotFound();
 
-            return NotFound();
+            return Ok(geoRequest);
         }
 
         [HttpPut]
@@ -59,42 +61,10 @@ namespace ApiGeo.Service.Controllers
             entity.Lat = geoResult.Lat;
             entity.Lon = geoResult.Lon;
             entity.State = geoResult.State;
-            //entity = geoResult;
+
             context.Entry(entity).State = EntityState.Modified;
-            try
-            {
-                await context.SaveChangesAsync();
-            }
-            catch (Exception e)
-            {
-                var ex = e.InnerException.Message;
-            }
+            await context.SaveChangesAsync();
             return Ok();
-        }
-
-        private void SendMessage(GeoRequest request)
-        {
-            const string hostName = "rabbit-mq";
-            const string queuename = "Geolocate";
-            var factory = new ConnectionFactory() { HostName = hostName };
-
-            using var connection = factory.CreateConnection();
-            using (var channel = connection.CreateModel())
-            {
-                channel.QueueDeclare(queue: queuename,
-                                     durable: false,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
-
-                string message = JsonConvert.SerializeObject(request);
-                var body = Encoding.UTF8.GetBytes(message);
-
-                channel.BasicPublish(exchange: string.Empty,
-                                     routingKey: queuename,
-                                     basicProperties: null,
-                                     body: body);
-            }
         }
     }
 }

@@ -1,4 +1,5 @@
 using ApiGeo.Service.Persistence;
+using ApiGeo.Service.RabbitService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +28,7 @@ namespace ApiGeo.Service
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<DataContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-
+            services.AddTransient<IRabbitMqPublishMessage, RabbitMqPublishMessage>();
             services.AddSwaggerGen();
             services.AddControllers();
         }
