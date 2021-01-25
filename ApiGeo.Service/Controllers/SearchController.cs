@@ -51,19 +51,24 @@ namespace ApiGeo.Service.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateRequestState(GeoResult geoResult)
         {
-            var results = context.GeoResults.ToList();
             var entity = await context.GeoResults.FirstOrDefaultAsync(x => x.GeoResultId == geoResult.GeoResultId);
 
             if (entity == null)
-            {
                 return NotFound();
-            }
 
             entity.Lat = geoResult.Lat;
-            entity.Long = geoResult.Long;
-            entity.State = "Terminado";
+            entity.Lon = geoResult.Lon;
+            entity.State = geoResult.State;
+            //entity = geoResult;
             context.Entry(entity).State = EntityState.Modified;
-            await context.SaveChangesAsync();
+            try
+            {
+                await context.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                var ex = e.InnerException.Message;
+            }
             return Ok();
         }
 
@@ -73,24 +78,22 @@ namespace ApiGeo.Service.Controllers
             const string queuename = "Geolocate";
             var factory = new ConnectionFactory() { HostName = hostName };
 
-            using (var connection = factory.CreateConnection())
+            using var connection = factory.CreateConnection();
+            using (var channel = connection.CreateModel())
             {
-                using (var channel = connection.CreateModel())
-                {
-                    channel.QueueDeclare(queue: queuename,
-                                         durable: false,
-                                         exclusive: false,
-                                         autoDelete: false,
-                                         arguments: null);
+                channel.QueueDeclare(queue: queuename,
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
 
-                    string message = JsonConvert.SerializeObject(request);
-                    var body = Encoding.UTF8.GetBytes(message);
+                string message = JsonConvert.SerializeObject(request);
+                var body = Encoding.UTF8.GetBytes(message);
 
-                    channel.BasicPublish(exchange: "",
-                                         routingKey: queuename,
-                                         basicProperties: null,
-                                         body: body);
-                }
+                channel.BasicPublish(exchange: string.Empty,
+                                     routingKey: queuename,
+                                     basicProperties: null,
+                                     body: body);
             }
         }
     }

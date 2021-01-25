@@ -68,14 +68,7 @@ namespace Geolocator.Service
 
             var jsonContent = JsonConvert.SerializeObject(result);
             var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-            //var httpRequest = await httpClient.PutAsync("http://localhost:5000/api/search", httpContent);
-            //var httpRequest = await httpClient.PutAsync("http://localhost:49199/api/search", httpContent);
-            //var httpRequest = await httpClient.PutAsync("http://localhost:1898/api/search", httpContent);
-            var httpRequest = await httpClient.PutAsync("http://apigeo.service/api/search", httpContent);
-
-            //if (httpRequest.IsSuccessStatusCode)
-            //{
-            //}
+            await httpClient.PutAsync("http://apigeo.service/api/search", httpContent);
         }
 
         private static async Task<GeoResultRemote> Geolocate(GeoRequestRemote geoRequest)
@@ -98,8 +91,9 @@ namespace Geolocator.Service
                 {
                     string content = await response.Content.ReadAsStringAsync();
                     var geoResults = JsonConvert.DeserializeObject<List<GeoResultRemote>>(content);
-                    var result = geoResults.FirstOrDefault();
+                    var result = geoResults?.FirstOrDefault();
                     result.GeoResultId = geoRequest.Id;
+                    result.State = "Terminado";
                     return result;
                 }
             }

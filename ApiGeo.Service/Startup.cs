@@ -1,5 +1,4 @@
 using ApiGeo.Service.Persistence;
-using ApiGeo.Service.RabbitHandler;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;

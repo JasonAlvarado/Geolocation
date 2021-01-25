@@ -12,8 +12,7 @@ namespace ApiGeo.Service.Model
         public int Id { get; set; }
         public int GeoResultId { get; set; }
         public string Lat { get; set; }
-
-        public string Long { get; set; }
+        public string Lon { get; set; }
         public string State { get; set; }
     }
 }
