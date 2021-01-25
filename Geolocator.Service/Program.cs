@@ -1,4 +1,5 @@
-﻿using Geolocator.Service.RemoteModel;
+﻿using CommunicationHelper.Http;
+using Geolocator.Service.RemoteModel;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -16,93 +17,59 @@ namespace Geolocator.Service
         private const string HostName = "rabbit-mq";
         private const string QueueName = "Geolocate";
 
-        //static async Task Main()
         public static void Main(string[] args)
         {
-            GeoRequestRemote geoRequest = new GeoRequestRemote();
-
             var factory = new ConnectionFactory() { HostName = HostName };
-            using (var connection = factory.CreateConnection())
+            using var connection = factory.CreateConnection();
+            using var channel = connection.CreateModel();
+
+            // Always ready to receive rabbitMq messages
+            while (true)
             {
-                using (var channel = connection.CreateModel())
+                channel.QueueDeclare(queue: QueueName,
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
+
+                var consumer = new EventingBasicConsumer(channel);
+
+                consumer.Received += async (model, ea) =>
                 {
-                    while (true)
-                    {
-                        channel.QueueDeclare(queue: QueueName,
-                                             durable: false,
-                                             exclusive: false,
-                                             autoDelete: false,
-                                             arguments: null);
+                    await GeolocateRequest(ea);
+                };
 
-                        var consumer = new EventingBasicConsumer(channel);
-                        consumer.Received += async (model, ea) =>
-                        {
-                            var body = ea.Body.ToArray();
-                            var message = Encoding.UTF8.GetString(body);
-
-                            geoRequest = JsonConvert.DeserializeObject<GeoRequestRemote>(message);
-                            var result = await Geolocate(geoRequest);
-
-                            if (result != null)
-                            {
-                                SaveResult(result);
-                            }
-                        };
-                        channel.BasicConsume(queue: QueueName,
-                                             autoAck: true,
-                                             consumer: consumer);
-                    }
-                }
+                channel.BasicConsume(queue: QueueName,
+                                     autoAck: true,
+                                     consumer: consumer);
             }
         }
 
-        private static async void SaveResult(GeoResultRemote result)
+        private static async Task GeolocateRequest(BasicDeliverEventArgs ea)
         {
-            var httpClient = new HttpClient();
-            #region HttpHeaders
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "text/html,application/xhtml+xml,application/xml");
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Encoding", "gzip, deflate");
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 6.2; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0");
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Charset", "ISO-8859-1");
-            #endregion
+            var message = Encoding.UTF8.GetString(ea.Body.ToArray());
+            var geoRequest = JsonConvert.DeserializeObject<GeoRequestRemote>(message);
 
-            var jsonContent = JsonConvert.SerializeObject(result);
-            var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-            await httpClient.PutAsync("http://apigeo.service/api/search", httpContent);
-        }
-
-        private static async Task<GeoResultRemote> Geolocate(GeoRequestRemote geoRequest)
-        {
-            var httpClient = new HttpClient();
-
-            #region HttpHeaders
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "text/html,application/xhtml+xml,application/xml");
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Encoding", "gzip, deflate");
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 6.2; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0");
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Charset", "ISO-8859-1");
-            #endregion
-
+            HttpHelper httpClientHelper = new HttpHelper();
             var url = $"https://nominatim.openstreetmap.org/search?street={geoRequest.Street}%20{geoRequest.Number}&city={geoRequest.City}&country={geoRequest.Country}&format=json";
-            var response = await httpClient.GetAsync(new Uri(url));
+            var geolocateResponse = await httpClientHelper.Get(url);
 
-            try
+            if (geolocateResponse.IsSuccessStatusCode)
             {
-                if (response.IsSuccessStatusCode)
+                try
                 {
-                    string content = await response.Content.ReadAsStringAsync();
-                    var geoResults = JsonConvert.DeserializeObject<List<GeoResultRemote>>(content);
-                    var result = geoResults?.FirstOrDefault();
-                    result.GeoResultId = geoRequest.Id;
+                    string content = await geolocateResponse.Content.ReadAsStringAsync();
+                    var result = JsonConvert.DeserializeObject<List<GeoResultRemote>>(content).FirstOrDefault();
+                    result.GeoRequestId = geoRequest.Id;
                     result.State = "Terminado";
-                    return result;
+
+                    await httpClientHelper.Put("http://apigeo.service/api/search", result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex?.InnerException?.Message);
                 }
             }
-            catch (Exception ex)
-            {
-                return null;
-            }
-
-            return null;
         }
     }
 }

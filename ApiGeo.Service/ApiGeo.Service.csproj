@@ -18,5 +18,9 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Geolocator.Service\Geolocator.Service.csproj" />
+  </ItemGroup>
+
 
 </Project>
