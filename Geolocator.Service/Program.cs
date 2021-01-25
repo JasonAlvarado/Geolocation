@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,7 +17,7 @@ namespace Geolocator.Service
         private const string QueueName = "Geolocate";
 
         //static async Task Main()
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             GeoRequestRemote geoRequest = new GeoRequestRemote();
 
@@ -24,33 +26,37 @@ namespace Geolocator.Service
             {
                 using (var channel = connection.CreateModel())
                 {
-                    channel.QueueDeclare(queue: QueueName,
-                                         durable: false,
-                                         exclusive: false,
-                                         autoDelete: false,
-                                         arguments: null);
-
-                    var consumer = new EventingBasicConsumer(channel);
-                    consumer.Received += (model, ea) =>
+                    while (true)
                     {
-                        var body = ea.Body.ToArray();
-                        var message = Encoding.UTF8.GetString(body);
-                        geoRequest = JsonConvert.DeserializeObject<GeoRequestRemote>(message);
-                        var result = Geolocate(geoRequest);
+                        channel.QueueDeclare(queue: QueueName,
+                                             durable: false,
+                                             exclusive: false,
+                                             autoDelete: false,
+                                             arguments: null);
 
-                        if (result != null)
+                        var consumer = new EventingBasicConsumer(channel);
+                        consumer.Received += async (model, ea) =>
                         {
-                            SaveResult(result);
-                        }
-                    };
-                    channel.BasicConsume(queue: QueueName,
-                                         autoAck: true,
-                                         consumer: consumer);
+                            var body = ea.Body.ToArray();
+                            var message = Encoding.UTF8.GetString(body);
+
+                            geoRequest = JsonConvert.DeserializeObject<GeoRequestRemote>(message);
+                            var result = await Geolocate(geoRequest);
+
+                            if (result != null)
+                            {
+                                SaveResult(result);
+                            }
+                        };
+                        channel.BasicConsume(queue: QueueName,
+                                             autoAck: true,
+                                             consumer: consumer);
+                    }
                 }
             }
         }
 
-        private static async void SaveResult(Task<GeoResultRemote> result)
+        private static async void SaveResult(GeoResultRemote result)
         {
             var httpClient = new HttpClient();
             #region HttpHeaders
@@ -60,9 +66,12 @@ namespace Geolocator.Service
             httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Charset", "ISO-8859-1");
             #endregion
 
-
-            var httpContent = new StringContent(JsonConvert.SerializeObject(result), Encoding.UTF8, "application/json");
-            var httpRequest = await httpClient.PutAsync("http://localhost:5000/api/search", httpContent);
+            var jsonContent = JsonConvert.SerializeObject(result);
+            var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            //var httpRequest = await httpClient.PutAsync("http://localhost:5000/api/search", httpContent);
+            //var httpRequest = await httpClient.PutAsync("http://localhost:49199/api/search", httpContent);
+            //var httpRequest = await httpClient.PutAsync("http://localhost:1898/api/search", httpContent);
+            var httpRequest = await httpClient.PutAsync("http://apigeo.service/api/search", httpContent);
 
             //if (httpRequest.IsSuccessStatusCode)
             //{
@@ -83,11 +92,20 @@ namespace Geolocator.Service
             var url = $"https://nominatim.openstreetmap.org/search?street={geoRequest.Street}%20{geoRequest.Number}&city={geoRequest.City}&country={geoRequest.Country}&format=json";
             var response = await httpClient.GetAsync(new Uri(url));
 
-            if (response.IsSuccessStatusCode)
+            try
             {
-                string content = await response.Content.ReadAsStringAsync();
-                GeoResultRemote geoResult = JsonConvert.DeserializeObject<GeoResultRemote>(content);
-                return geoResult;
+                if (response.IsSuccessStatusCode)
+                {
+                    string content = await response.Content.ReadAsStringAsync();
+                    var geoResults = JsonConvert.DeserializeObject<List<GeoResultRemote>>(content);
+                    var result = geoResults.FirstOrDefault();
+                    result.GeoResultId = geoRequest.Id;
+                    return result;
+                }
+            }
+            catch (Exception ex)
+            {
+                return null;
             }
 
             return null;

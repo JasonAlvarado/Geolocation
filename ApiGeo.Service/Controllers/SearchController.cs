@@ -49,9 +49,19 @@ namespace ApiGeo.Service.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> Get(GeoResult geoResult)
+        public async Task<IActionResult> UpdateRequestState(GeoResult geoResult)
         {
+            var results = context.GeoResults.ToList();
             var entity = await context.GeoResults.FirstOrDefaultAsync(x => x.GeoResultId == geoResult.GeoResultId);
+
+            if (entity == null)
+            {
+                return NotFound();
+            }
+
+            entity.Lat = geoResult.Lat;
+            entity.Long = geoResult.Long;
+            entity.State = "Terminado";
             context.Entry(entity).State = EntityState.Modified;
             await context.SaveChangesAsync();
             return Ok();
