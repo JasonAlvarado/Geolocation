@@ -1,4 +1,4 @@
-version: '3.4'
+version: "3.4"
 
 services:
   db:
@@ -10,17 +10,23 @@ services:
     ports:
      - 2800:2800
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: my-rabbit
+    ports:
+      - 5672:5672
+      - 15672:15672
+
   geolocator.service:
     image: ${DOCKER_REGISTRY-}geolocatorservice
     build:
       context: .
       dockerfile: Geolocator.Service/Dockerfile
-    depends_on:
-     - db
 
   apigeo.service:
     image: ${DOCKER_REGISTRY-}apigeoservice
     build:
       context: .
       dockerfile: ApiGeo.Service/Dockerfile
-
+    depends_on:
+      - db

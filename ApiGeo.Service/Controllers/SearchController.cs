@@ -48,9 +48,18 @@ namespace ApiGeo.Service.Controllers
             return NotFound();
         }
 
+        [HttpPut]
+        public async Task<IActionResult> Get(GeoResult geoResult)
+        {
+            var entity = await context.GeoResults.FirstOrDefaultAsync(x => x.GeoResultId == geoResult.GeoResultId);
+            context.Entry(entity).State = EntityState.Modified;
+            await context.SaveChangesAsync();
+            return Ok();
+        }
+
         private void SendMessage(GeoRequest request)
         {
-            var factory = new ConnectionFactory() { HostName = "rabbit-mq" };
+            var factory = new ConnectionFactory() { HostName = "my-rabbit" };
 
             using (var connection = factory.CreateConnection())
             {

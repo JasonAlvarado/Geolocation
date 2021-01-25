@@ -29,8 +29,7 @@ namespace ApiGeo.Service
         {
             services.AddDbContext<DataContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
-            services.AddSingleton<GeolocateEventHandler>();
-
+            services.AddSwaggerGen();
             services.AddControllers();
         }
 
@@ -40,9 +39,10 @@ namespace ApiGeo.Service
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-            }
 
-            //app.UseRabbitListener();
+                app.UseSwagger();
+                app.UseSwaggerUI(cfg => cfg.SwaggerEndpoint("/swagger/v1/swagger.json", "my swagger"));
+            }
 
             app.UseRouting();
 
