@@ -11,43 +11,43 @@ namespace Geolocator.Service
 {
     class Program
     {
-        private readonly HttpClient httpClient;
-        private const string HostName = "my-rabbit";//rabbit-mq
-        private const string QueueName = "GeolocateRequest";
+        private const string HostName = "rabbit-mq";
+        private const string QueueName = "Geolocate";
 
-        public Program(HttpClient httpClient)
-        {
-            this.httpClient = httpClient;
-        }
-
-        static async Task Main()
+        //static async Task Main()
+        static void Main(string[] args)
         {
             GeoRequestRemote geoRequest = new GeoRequestRemote();
-            //var factory = new ConnectionFactory() { HostName = HostName };
-            //using (var connection = factory.CreateConnection())
-            //{
-            //    using (var channel = connection.CreateModel())
-            //    {
-            //        channel.QueueDeclare(queue: QueueName,
-            //                             durable: false,
-            //                             exclusive: false,
-            //                             autoDelete: false,
-            //                             arguments: null);
 
-            //        var consumer = new EventingBasicConsumer(channel);
-            //        consumer.Received += (model, ea) =>
-            //        {
-            //            var body = ea.Body.ToArray();
-            //            var message = Encoding.UTF8.GetString(body);
-            //            geoRequest = JsonConvert.DeserializeObject<GeoRequestRemote>(message);
-            //            var result = Geolocate(geoRequest);
-            //            SaveResult(result);
-            //        };
-            //        channel.BasicConsume(queue: QueueName,
-            //                             autoAck: true,
-            //                             consumer: consumer);
-            //    }
-            //}
+            var factory = new ConnectionFactory() { HostName = HostName };
+            using (var connection = factory.CreateConnection())
+            {
+                using (var channel = connection.CreateModel())
+                {
+                    channel.QueueDeclare(queue: QueueName,
+                                         durable: false,
+                                         exclusive: false,
+                                         autoDelete: false,
+                                         arguments: null);
+
+                    var consumer = new EventingBasicConsumer(channel);
+                    consumer.Received += (model, ea) =>
+                    {
+                        var body = ea.Body.ToArray();
+                        var message = Encoding.UTF8.GetString(body);
+                        geoRequest = JsonConvert.DeserializeObject<GeoRequestRemote>(message);
+                        var result = Geolocate(geoRequest);
+
+                        if (result != null)
+                        {
+                            SaveResult(result);
+                        }
+                    };
+                    channel.BasicConsume(queue: QueueName,
+                                         autoAck: true,
+                                         consumer: consumer);
+                }
+            }
         }
 
         private static async void SaveResult(Task<GeoResultRemote> result)

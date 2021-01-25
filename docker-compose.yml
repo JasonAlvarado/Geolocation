@@ -11,8 +11,9 @@ services:
      - 2800:2800
 
   rabbitmq:
+    container_name: rabbit-mq
     image: rabbitmq:3-management
-    hostname: my-rabbit
+    hostname: rabbit-mq
     ports:
       - 5672:5672
       - 15672:15672
@@ -22,6 +23,8 @@ services:
     build:
       context: .
       dockerfile: Geolocator.Service/Dockerfile
+    depends_on:
+     - rabbitmq
 
   apigeo.service:
     image: ${DOCKER_REGISTRY-}apigeoservice

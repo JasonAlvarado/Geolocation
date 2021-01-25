@@ -59,13 +59,15 @@ namespace ApiGeo.Service.Controllers
 
         private void SendMessage(GeoRequest request)
         {
-            var factory = new ConnectionFactory() { HostName = "my-rabbit" };
+            const string hostName = "rabbit-mq";
+            const string queuename = "Geolocate";
+            var factory = new ConnectionFactory() { HostName = hostName };
 
             using (var connection = factory.CreateConnection())
             {
                 using (var channel = connection.CreateModel())
                 {
-                    channel.QueueDeclare(queue: "GeolocateRequest",
+                    channel.QueueDeclare(queue: queuename,
                                          durable: false,
                                          exclusive: false,
                                          autoDelete: false,
@@ -75,7 +77,7 @@ namespace ApiGeo.Service.Controllers
                     var body = Encoding.UTF8.GetBytes(message);
 
                     channel.BasicPublish(exchange: "",
-                                         routingKey: "GeolocateRequest",
+                                         routingKey: queuename,
                                          basicProperties: null,
                                          body: body);
                 }
