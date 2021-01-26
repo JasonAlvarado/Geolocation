@@ -25,11 +25,12 @@ namespace ApiGeo.Service.Controllers
             await context.GeoRequests.AddAsync(request);
             await context.SaveChangesAsync();
 
-            await context.GeoResults.AddAsync(new GeoResult() { GeoRequestId = request.Id, State = "Procesando" });
+            var geoResult = new GeoResult() { GeoRequestId = request.Id, State = "Procesando" };
+            await context.GeoResults.AddAsync(geoResult);
             await context.SaveChangesAsync();
 
             await rabbitMqHelper.PublishMessage(request);
-            return Ok(request.Id);
+            return Ok(geoResult);
         }
 
         [HttpGet("geocodificar/{id}")]

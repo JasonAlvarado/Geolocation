@@ -33,6 +33,9 @@ namespace ApiGeo.Service
             {
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
                 logger.LogError(ex, ex?.InnerException?.Message);
+
+                // if database cannot access with sa credentials, paste this in docker-compose.yml line 7
+                // MSSQL_SA_PASSWORD: "Asd123/*-"
                 throw;
             }
 
